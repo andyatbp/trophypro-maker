@@ -2,12 +2,15 @@ import { path2 } from "@jscad/modeling/src/geometries";
 import { union } from "@jscad/modeling/src/operations/booleans";
 import {
   extrudeLinear,
-  extrudeRectangular
+  extrudeRectangular,
+  extrudeRotate,
 } from "@jscad/modeling/src/operations/extrusions";
 import {
   rotate,
   scale,
-  translate
+  translate,
+  translateX,
+  translateY,
 } from "@jscad/modeling/src/operations/transforms";
 const { TAU } = require("@jscad/modeling").maths.constants;
 
@@ -15,12 +18,13 @@ import { Vec3 } from "@jscad/modeling/src/maths/vec3";
 import { measureCenter } from "@jscad/modeling/src/measurements";
 import { translateZ } from "@jscad/modeling/src/operations/transforms";
 import {
+  circle,
   cuboid,
   cylinder,
   cylinderElliptic,
   polygon,
   sphere,
-  square
+  square,
 } from "@jscad/modeling/src/primitives";
 import { vectorText } from "@jscad/modeling/src/text";
 import { BoardProLogo } from "~/assets/logo-points";
@@ -42,25 +46,25 @@ export const paramConfiguration = {
     value: 50,
     min: 30,
     max: 70,
-    step: 5,
+    step: 2,
   },
   baseLength: {
     value: 70,
     min: 50,
     max: 90,
-    step: 5,
+    step: 2,
   },
   baseHeight: {
     value: 20,
     min: 10,
     max: 30,
-    step: 5,
+    step: 2,
   },
   neckHeight: {
     value: 30,
     min: 10,
-    max: 50,
-    step: 5,
+    max: 90,
+    step: 2,
   },
   neckSize: {
     value: 10,
@@ -185,6 +189,38 @@ const getBody2 = ({ bottomRadius, topRadius, height }: any) => {
             startRadius: [topRadius + 2, topRadius + 2],
             endRadius: [topRadius + 2, topRadius + 2],
           })
+        ),
+        //right hand
+        translate(
+          [0, bottomRadius-p, height / 2],
+          rotate(
+            [0, TAU / 4, 0],
+            extrudeRotate(
+              { segments: 32, angle: TAU / 2 },
+              circle({
+                radius: 4,
+                center: [8, 0],
+                startAngle: 0,
+                endAngle: 360,
+              })
+            )
+          )
+        ),
+        //right hand
+        translate(
+          [0, -bottomRadius+p, height / 2],
+          rotate(
+            [0, TAU / 4, TAU/2],
+            extrudeRotate(
+              { segments: 32, angle: TAU / 2 },
+              circle({
+                radius: 4,
+                center: [8, 0],
+                startAngle: 0,
+                endAngle: 360,
+              })
+            )
+          )
         )
       )
     ),
@@ -236,7 +272,7 @@ const getTrophy = (params: TrophyProps) => {
 
   const neck = translateZ(
     params.baseHeight * scale,
-    getNeck2({
+    getNeck({
       size: params.neckSize * scale,
       height: params.neckHeight * scale,
       bottomHeight: 6 * scale,
@@ -251,7 +287,16 @@ const getTrophy = (params: TrophyProps) => {
       height: params.bodyHeight * scale,
     })
   );
-  // translateZ(params.baseHeight + params.neckHeight / 2, neck);
+
+  // return [
+  //   rotate(
+  //     [0, TAU/4, 0],
+  //     extrudeRotate(
+  //       { segments: 32, angle: TAU / 2 },
+  //       circle({ radius: 4, center: [8, 0], startAngle: 0, endAngle: 360 })
+  //     )
+  //   ),
+  // ];
 
   return [union(base, neck, body)];
 };
