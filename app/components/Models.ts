@@ -1,29 +1,28 @@
-import { colorize } from "@jscad/modeling/src/colors";
 import { path2 } from "@jscad/modeling/src/geometries";
 import { union } from "@jscad/modeling/src/operations/booleans";
 import {
   extrudeLinear,
-  extrudeRectangular,
+  extrudeRectangular
 } from "@jscad/modeling/src/operations/extrusions";
-import { cncVectorFont } from "~/assets/cncVector";
-// import { deserialize } from "@jscad/svg-deserializer";
-const { deserialize } = require("@jscad/svg-deserializer");
-import Logo from "../assets/boardpro-logo.svg";
-// const BproLogo = require('../assets/bpro-logo.stl')
+import {
+  rotate,
+  scale,
+  translate
+} from "@jscad/modeling/src/operations/transforms";
 const { TAU } = require("@jscad/modeling").maths.constants;
 
+import { Vec3 } from "@jscad/modeling/src/maths/vec3";
+import { measureCenter } from "@jscad/modeling/src/measurements";
+import { translateZ } from "@jscad/modeling/src/operations/transforms";
 import {
-  cube,
   cuboid,
   cylinder,
   cylinderElliptic,
-  ellipsoid,
-  square,
-  star,
+  polygon,
+  sphere,
+  square
 } from "@jscad/modeling/src/primitives";
 import { vectorText } from "@jscad/modeling/src/text";
-import { Vec3 } from "@jscad/modeling/src/maths/vec3";
-import { translateZ } from "@jscad/modeling/src/operations/transforms";
 import { BoardProLogo } from "~/assets/logo-points";
 
 export interface TrophyParameters {
@@ -35,7 +34,7 @@ export interface TrophyParameters {
 export const paramConfiguration = {
   scale: {
     value: 0.5,
-    min: 0.2,
+    min: 0.3,
     max: 2,
     step: 0.1,
   },
@@ -65,41 +64,27 @@ export const paramConfiguration = {
   },
   neckSize: {
     value: 10,
-    min: 2,
+    min: 6,
     max: 20,
     step: 2,
   },
   bodyTopRadius: {
-    value: 70,
-    min: 50,
+    value: 30,
+    min: 10,
     max: 90,
     step: 5,
   },
   bodyBottomRadius: {
     value: 30,
     min: 10,
-    max: 50,
+    max: 90,
     step: 5,
   },
   bodyHeight: {
     value: 50,
-    min: 30,
-    max: 70,
+    min: 20,
+    max: 90,
     step: 5,
-  },
-
-  name: "World",
-  vertices: {
-    value: 6,
-    min: 5,
-    max: 10,
-    step: 1,
-  },
-  height: {
-    value: 10,
-    max: 20,
-    min: 3,
-    step: 1,
   },
 };
 
@@ -120,8 +105,6 @@ interface TrophyProps {
 }
 
 const getBase = ({ w, l, h, padding, bottomLayerHeight }: any) => {
-  // const padding = 2 * s;
-  // const bottomHeight = 2 * s;
   const c: Vec3 = [0, 0, 0];
   return union(
     translateZ(
@@ -143,7 +126,23 @@ const getNeck = ({ size, height, bottomHeight }: any) => {
     ),
     translateZ(
       bottomHeight / 2,
-      cylinder({ height: bottomHeight, radius: size+bottomHeight })
+      cylinder({ height: bottomHeight, radius: size + bottomHeight })
+    )
+  );
+};
+
+const getNeck2 = ({ size, height, bottomHeight }: any) => {
+  return union(
+    translateZ(
+      bottomHeight,
+      extrudeRectangular(
+        { size: 1, height: height, twistAngle: TAU / 2 },
+        square({ size: size })
+      )
+    ),
+    translateZ(
+      bottomHeight / 2,
+      cylinder({ height: bottomHeight, radius: size + bottomHeight })
     )
   );
 };
@@ -159,6 +158,34 @@ const getBody = ({ bottomRadius, topRadius, height }: any) => {
           startRadius: [bottomRadius, bottomRadius],
           endRadius: [topRadius, topRadius],
         })
+      )
+    ),
+  ];
+};
+
+const getBody2 = ({ bottomRadius, topRadius, height }: any) => {
+  const p = 2;
+  return [
+    translateZ(
+      bottomRadius,
+      union(
+        sphere({ radius: bottomRadius }),
+        translateZ(
+          height / 2,
+          cylinderElliptic({
+            height: height,
+            startRadius: [bottomRadius, bottomRadius],
+            endRadius: [topRadius, topRadius],
+          })
+        ),
+        translateZ(
+          height + p / 2,
+          cylinderElliptic({
+            height: p,
+            startRadius: [topRadius + 2, topRadius + 2],
+            endRadius: [topRadius + 2, topRadius + 2],
+          })
+        )
       )
     ),
   ];
@@ -184,23 +211,19 @@ const getWinnerName = (name: string) => {
 };
 
 const getLogo = () => {
-  // const paths = path2.fromPoints({ closed: true }, BoardProLogo)
-  // return extrudeLinear({ height: 10 }, paths)
-  // const geometry = deserialize(
-  //   { filename: "file.svg", output: "geometry" },
-  //   Logo
-  //   );
-  //   console.log('geometry', geometry);
-  // return BproLogo;
+  const logo = scale(
+    [0.1, 0.1, 0.1],
+    extrudeLinear({ height: 10 }, polygon({ points: BoardProLogo }))
+  );
+
+  let center = measureCenter(logo);
+  return rotate(
+    [-90, 0, 0],
+    translate([center[0] * -1, center[1] * -1, 0], logo)
+  );
 };
 
 const getTrophy = (params: TrophyProps) => {
-  const models = [];
-
-  // models.push(cube({ size: 12, center: [0, 0, 6] }));
-  // models.push(colorize([1, 0, 0], sphere({ radius: 6 })));
-  // models.push(extrudeLinear({ height: 10 }, circle({ radius: 10 })));
-
   const scale = params.scale;
 
   const base = getBase({
@@ -212,17 +235,17 @@ const getTrophy = (params: TrophyProps) => {
   });
 
   const neck = translateZ(
-    (params.baseHeight) * scale,
-    getNeck({
+    params.baseHeight * scale,
+    getNeck2({
       size: params.neckSize * scale,
       height: params.neckHeight * scale,
-      bottomHeight: 6*scale
+      bottomHeight: 6 * scale,
     })
   );
 
   const body = translateZ(
     (params.baseHeight + params.neckHeight) * scale,
-    getBody({
+    getBody2({
       bottomRadius: params.bodyBottomRadius * scale,
       topRadius: params.bodyTopRadius * scale,
       height: params.bodyHeight * scale,
@@ -230,22 +253,7 @@ const getTrophy = (params: TrophyProps) => {
   );
   // translateZ(params.baseHeight + params.neckHeight / 2, neck);
 
-  models.push(
-    // extrudeLinear({ height }, star({ vertices, outerRadius: 10 })),
-    // ellipsoid({ radius: [5, 10, 20] })
-
-    extrudeRectangular(
-      { size: 1, height: 30, twistAngle: TAU / 2 },
-      square({ size: 10 })
-    )
-  );
-  return [
-    base,
-    neck,
-    body,
-    // getLogo(),
-    // models
-  ];
+  return [union(base, neck, body)];
 };
 
 export { getTrophy };

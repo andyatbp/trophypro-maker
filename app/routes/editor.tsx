@@ -12,7 +12,7 @@ export default function Editor() {
     <div className="h-full">
       <header className="h-12 bg-slate-100">
         <div className="flex flex-row justify-between p-4">
-          <Link to={"/"}>Logo</Link>
+          <Link to={"/"}>Trophy Maker</Link>
           <button
             onClick={() => {
               saveSTL("your-trophy", getTrophy(params));
@@ -30,8 +30,8 @@ export default function Editor() {
           <LevaConfig />
         </div>
       </div>
-      <footer className="mt-4 flex justify-end">
-        <span>2023 copyright</span>
+      <footer className="mt-4 flex justify-center">
+        <span>20/06/2023 BoardPro Hackathon</span>
       </footer>
     </div>
   );

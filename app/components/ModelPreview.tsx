@@ -38,9 +38,8 @@ export default function ModelPreview({ models }: PreviewProp) {
 
     return (
       <div>
-        <div>{winWidth}</div>
         <Suspense fallback={renderLoader()}>
-          <Renderer solids={models} height={500} width={winWidth} />
+          <Renderer solids={models} height={600} width={winWidth} />
         </Suspense>
       </div>
     );
