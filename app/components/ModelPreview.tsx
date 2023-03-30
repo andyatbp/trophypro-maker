@@ -1,4 +1,4 @@
-import React, { lazy, Suspense } from "react";
+import React, { lazy, Suspense, useEffect, useState } from "react";
 
 // lazy load to reduce the loading time
 const Renderer = lazy(() =>
@@ -13,7 +13,9 @@ interface PreviewProp {
 let isHydrating = true;
 
 export default function ModelPreview({ models }: PreviewProp) {
-  const [isHydrated, setIsHydrated] = React.useState(!isHydrating);
+  const [isHydrated, setIsHydrated] = useState(!isHydrating);
+
+  const [winWidth, setWinWidth] = useState(0);
 
   React.useEffect(() => {
     isHydrating = false;
@@ -24,15 +26,25 @@ export default function ModelPreview({ models }: PreviewProp) {
 
   // Make sure is in client side
   if (isHydrated) {
+    const padding = 50;
+    // resize the canvas to fill browser window dynamically
+    window.onresize = () => {
+      console.log("resize");
+      setWinWidth(window.innerWidth - padding);
+    };
+    if (winWidth === 0) {
+      setWinWidth(window.innerWidth - padding);
+    }
+
     return (
-      <div title="JSCad Rendering Test">
-        {/* https://web.dev/code-splitting-suspense/ */}
+      <div>
+        <div>{winWidth}</div>
         <Suspense fallback={renderLoader()}>
-          <Renderer solids={models} height={500} width={800} />
+          <Renderer solids={models} height={500} width={winWidth} />
         </Suspense>
       </div>
     );
   } else {
-    return <h1>loading</h1>;
+    return renderLoader()
   }
 }

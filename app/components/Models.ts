@@ -1,8 +1,16 @@
 import { colorize } from "@jscad/modeling/src/colors";
 import { path2 } from "@jscad/modeling/src/geometries";
 import { union } from "@jscad/modeling/src/operations/booleans";
-import { extrudeLinear } from "@jscad/modeling/src/operations/extrusions";
-import { cncVectorFont } from "~/fonts/cncVector";
+import {
+  extrudeLinear,
+  extrudeRectangular,
+} from "@jscad/modeling/src/operations/extrusions";
+import { cncVectorFont } from "~/assets/cncVector";
+// import { deserialize } from "@jscad/svg-deserializer";
+const { deserialize } = require("@jscad/svg-deserializer");
+import Logo from "../assets/boardpro-logo.svg";
+// const BproLogo = require('../assets/bpro-logo.stl')
+const { TAU } = require("@jscad/modeling").maths.constants;
 
 import {
   cube,
@@ -16,6 +24,7 @@ import {
 import { vectorText } from "@jscad/modeling/src/text";
 import { Vec3 } from "@jscad/modeling/src/maths/vec3";
 import { translateZ } from "@jscad/modeling/src/operations/transforms";
+import { BoardProLogo } from "~/assets/logo-points";
 
 export interface TrophyParameters {
   name?: string;
@@ -126,8 +135,17 @@ const getBase = ({ w, l, h, padding, bottomLayerHeight }: any) => {
   );
 };
 
-const getNeck = ({ size, height }: any) => {
-  return cylinder({ height: height, radius: size });
+const getNeck = ({ size, height, bottomHeight }: any) => {
+  return union(
+    translateZ(
+      bottomHeight + height / 2,
+      cylinder({ height: height, radius: size })
+    ),
+    translateZ(
+      bottomHeight / 2,
+      cylinder({ height: bottomHeight, radius: size+bottomHeight })
+    )
+  );
 };
 
 const getBody = ({ bottomRadius, topRadius, height }: any) => {
@@ -165,6 +183,17 @@ const getWinnerName = (name: string) => {
   return [extrudeLinear({ height: 10 }, paths)];
 };
 
+const getLogo = () => {
+  // const paths = path2.fromPoints({ closed: true }, BoardProLogo)
+  // return extrudeLinear({ height: 10 }, paths)
+  // const geometry = deserialize(
+  //   { filename: "file.svg", output: "geometry" },
+  //   Logo
+  //   );
+  //   console.log('geometry', geometry);
+  // return BproLogo;
+};
+
 const getTrophy = (params: TrophyProps) => {
   const models = [];
 
@@ -183,10 +212,11 @@ const getTrophy = (params: TrophyProps) => {
   });
 
   const neck = translateZ(
-    (params.baseHeight + params.neckHeight / 2) * scale,
+    (params.baseHeight) * scale,
     getNeck({
       size: params.neckSize * scale,
       height: params.neckHeight * scale,
+      bottomHeight: 6*scale
     })
   );
 
@@ -202,26 +232,19 @@ const getTrophy = (params: TrophyProps) => {
 
   models.push(
     // extrudeLinear({ height }, star({ vertices, outerRadius: 10 })),
-    ellipsoid({ radius: [5, 10, 20] })
+    // ellipsoid({ radius: [5, 10, 20] })
+
+    extrudeRectangular(
+      { size: 1, height: 30, twistAngle: TAU / 2 },
+      square({ size: 10 })
+    )
   );
   return [
     base,
     neck,
     body,
-    // ...getBody({ bottomSize: 1, topSize: 1, size: 1 }),
-    // getWinnerName("Hello"),
-    // models,
-    // extrudeLinear(
-    //   { height: 10 },
-    //   colorize(
-    //     [0, 0, 0, 1],
-    //     path2.fromPoints({ closed: true }, [
-    //       [0, 0],
-    //       [4, 0],
-    //       [4, 3],
-    //     ])
-    //   )
-    // ),
+    // getLogo(),
+    // models
   ];
 };
 
