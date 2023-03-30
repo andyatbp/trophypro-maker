@@ -1,5 +1,4 @@
 import React, { lazy, Suspense } from "react";
-import { getSimpleModel } from "./Models";
 
 // lazy load to reduce the loading time
 const Renderer = lazy(() =>
@@ -11,7 +10,6 @@ const Renderer = lazy(() =>
 interface PreviewProp {
   models: any[];
 }
-
 let isHydrating = true;
 
 export default function ModelPreview({ models }: PreviewProp) {

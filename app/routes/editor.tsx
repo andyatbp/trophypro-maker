@@ -1,27 +1,38 @@
 import { Link } from "@remix-run/react";
 import { useControls } from "leva";
-import React from "react";
 import ModelPreview from "~/components/ModelPreview";
-import { getSimpleModel, TrophyParameters } from "~/components/Models";
-import ParameterPanel from "~/components/ParameterPanel";
+import { getTrophy, paramConfiguration } from "~/components/Models";
 import LevaConfig from "~/LevaConfig";
+import { saveSTL } from "~/utils/jscad-utils";
 
 export default function Editor() {
-  const params = useControls({ name: "World", vertices: 2, height: 1 });
+  const params = useControls(paramConfiguration);
 
   return (
     <div className="h-full">
-      <header><Link to={'/'}>Logo</Link></header>
-      <div className="flex flex-col">
-        <div>
-          <ModelPreview models={getSimpleModel(params)} />
+      <header className="h-12 bg-slate-100">
+        <div className="flex flex-row justify-between p-4">
+          <Link to={"/"}>Logo</Link>
+          <button
+            onClick={() => {
+              saveSTL("your-trophy", getTrophy(params));
+            }}
+          >
+            Download STL
+          </button>
         </div>
+      </header>
+      <div className="flex flex-col p-8">
         <div>
-          {/* <ParameterPanel /> */}
+          <ModelPreview models={getTrophy(params)} />
+        </div>
+        <div style={{ height: "40vh", overflowY: "scroll" }}>
           <LevaConfig />
         </div>
       </div>
-      <footer>copy right</footer>
+      <footer className="mt-4 flex justify-end">
+        <span>2023 copyright</span>
+      </footer>
     </div>
   );
 }
